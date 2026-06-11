@@ -150,8 +150,11 @@ def render_dashboard_engine():
     df_alerts = db.get_alerts(limit=20)
 
     # Apply protocol filters dynamically on the DataFrame side
+    PROTOCOL_MAP = {"TCP": "6", "UDP": "17", "ICMP": "1"}
+
     if not df_flows.empty and selected_protocol != "ALL":
-        df_flows = df_flows[df_flows['protocol'].astype(str).str.contains(selected_protocol, case=False)]
+        proto_num = PROTOCOL_MAP.get(selected_protocol)
+        df_flows = df_flows[df_flows['protocol'].astype(str) == proto_num]
 
     # Prepare dataframes for time-series visualization handling
     if not df_flows.empty:
