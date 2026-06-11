@@ -3,6 +3,7 @@ import database as db
 import pandas as pd
 import plotly.express as px  # Premium data visualizations
 import time
+import subprocess , sys, os
 
 # 1. Page Configuration & Aesthetic Initializations
 st.set_page_config(
@@ -85,7 +86,28 @@ with st.sidebar:
     st.markdown("### 🛠️ System Actions")
     if st.button("Flush Cache / Re-sync DB", width="stretch"):
         st.toast("Database connection re-synchronized successfully!")
+def is_cloud():
+    """Detect if running on Streamlit Cloud."""
+    return os.environ.get("HOME") == "/home/appuser" or \
+           os.path.exists("/mount/src")
 
+def start_background_processes():
+    if "bg_procs_started" not in st.session_state:
+        script = "simulate.py" if is_cloud() else "sniffer.py"
+        subprocess.Popen(
+            [sys.executable, script],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        # Always run detector for real ML scoring
+        subprocess.Popen(
+            [sys.executable, "detector.py"],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
+        st.session_state["bg_procs_started"] = True
+
+start_background_processes()
 # 4. Header Section
 st.markdown('# 🛡️ AI Network Security & Anomaly Detection')
 st.markdown(
