@@ -140,7 +140,21 @@ with col2:
     st.markdown('<p class="section-header">🚨 Threat Intelligence Outliers</p>', unsafe_allow_html=True)
     alert_status_placeholder = st.empty()
     alert_table_placeholder = st.empty()
+# 6b. Secondary Analytics Row
+st.markdown("---")
+anal_col1, anal_col2, anal_col3 = st.columns(3)
 
+with anal_col1:
+    st.markdown('<p class="section-header">🌐 Top Source IPs</p>', unsafe_allow_html=True)
+    top_ips_placeholder = st.empty()
+
+with anal_col2:
+    st.markdown('<p class="section-header">📡 Protocol Distribution</p>', unsafe_allow_html=True)
+    proto_chart_placeholder = st.empty()
+
+with anal_col3:
+    st.markdown('<p class="section-header">📉 Anomaly Score Trend</p>', unsafe_allow_html=True)
+    score_trend_placeholder = st.empty()
 
 # 7. Production-Grade Fragment Refresh Engine
 @st.fragment
@@ -228,7 +242,67 @@ def render_dashboard_engine():
     else:
         chart_placeholder.info("Awaiting initial ingress packets from network sniffing system...")
         table_placeholder.empty()
+    # --- Secondary Analytics Row ---
+    # Chart 1: Top Source IPs by Traffic
+    with top_ips_placeholder.container():
+        if not df_flows.empty:
+            top_ips = df_flows.groupby('src_ip')['byte_count'].sum().nlargest(5).reset_index()
+            fig_ips = px.bar(
+                top_ips, x='byte_count', y='src_ip',
+                orientation='h',
+                labels={'byte_count': 'Bytes', 'src_ip': 'Source IP'},
+                color_discrete_sequence=['#00FFC4']
+            )
+            fig_ips.update_layout(
+                template="plotly_dark", height=220,
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                yaxis=dict(showgrid=False),
+                xaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+            )
+            st.plotly_chart(fig_ips, use_container_width=True, config={'displayModeBar': False})
 
+    # Chart 2: Protocol Distribution Pie
+    with proto_chart_placeholder.container():
+        if not df_flows.empty:
+            proto_map = {'6': 'TCP', '17': 'UDP', '1': 'ICMP'}
+            df_proto = df_flows.copy()
+            df_proto['proto_name'] = df_proto['protocol'].astype(str).map(proto_map).fillna('Other')
+            fig_proto = px.pie(
+                df_proto, names='proto_name',
+                color_discrete_sequence=['#00FFC4', '#FF4B4B', '#FFD700']
+            )
+            fig_proto.update_layout(
+                template="plotly_dark", height=220,
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                legend=dict(font=dict(color='#8A99AD'))
+            )
+            st.plotly_chart(fig_proto, use_container_width=True, config={'displayModeBar': False})
+
+    # Chart 3: Anomaly Score Trend Line
+    with score_trend_placeholder.container():
+        if not df_alerts.empty:
+            df_alerts_sorted = df_alerts.copy()
+            df_alerts_sorted['timestamp'] = pd.to_datetime(df_alerts_sorted['timestamp'])
+            df_alerts_sorted = df_alerts_sorted.sort_values('timestamp')
+            fig_score = px.line(
+                df_alerts_sorted, x='timestamp', y='anomaly_score',
+                labels={'timestamp': '', 'anomaly_score': 'Score'},
+                color_discrete_sequence=['#FF4B4B']
+            )
+            fig_score.update_layout(
+                template="plotly_dark", height=220,
+                margin=dict(l=10, r=10, t=10, b=10),
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=dict(showgrid=False),
+                yaxis=dict(showgrid=True, gridcolor='rgba(255,255,255,0.05)')
+            )
+            st.plotly_chart(fig_score, use_container_width=True, config={'displayModeBar': False})
+        else:
+            st.info("No anomaly scores yet...")
     # --- Column 2: Security Threat Assessment Center ---
     if not df_alerts.empty:
         with alert_status_placeholder.container():
