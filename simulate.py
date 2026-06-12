@@ -34,7 +34,7 @@ def run_simulation():
             score = round(random.uniform(-0.35, -0.05), 4)  # negative = anomalous
             db.log_alert(ts, src, dst, proto, pkts, bts, avg, score)
 
-        time.sleep(5)
+        time.sleep(15)
 
 if __name__ == "__main__":
     run_simulation()
