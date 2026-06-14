@@ -160,8 +160,8 @@ with anal_col3:
 @st.fragment
 def render_dashboard_engine():
     # Fetch data states safely from SQLite via your custom db backend
-    df_flows = db.get_recent_flows(limit=50)
-    df_alerts = db.get_alerts(limit=20)
+    df_flows = db.get_recent_flows(limit=20)
+    df_alerts = db.get_alerts(limit=10)
 
     # Apply protocol filters dynamically on the DataFrame side
     PROTOCOL_MAP = {"TCP": "6", "UDP": "17", "ICMP": "1"}
